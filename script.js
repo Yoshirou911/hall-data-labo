@@ -8,6 +8,29 @@
 // ============================================================
 const FREE_STORE_LIMIT  = 3;
 const FREE_RECORD_LIMIT = 100;
+
+// ============================================================
+// Premium 管理
+// ============================================================
+const PREMIUM_KEY  = 'hdr_premium';
+const UNLOCK_CODE  = 'HDRPREMIUM2026'; // Stripe success URL のパラメータと一致させる
+
+function isPremium() {
+  return localStorage.getItem(PREMIUM_KEY) === '1';
+}
+
+function tryUnlock(code) {
+  if (!code) return false;
+  if (code.trim().toUpperCase() === UNLOCK_CODE) {
+    localStorage.setItem(PREMIUM_KEY, '1');
+    return true;
+  }
+  return false;
+}
+
+function revokePremium() {
+  localStorage.removeItem(PREMIUM_KEY);
+}
 const WEEKDAYS = ['日','月','火','水','木','金','土'];
 
 const GRADE_LABELS = {
@@ -31,7 +54,7 @@ const DB = {
   },
   addStore(name) {
     const stores = this.getStores();
-    if (stores.length >= FREE_STORE_LIMIT)
+    if (!isPremium() && stores.length >= FREE_STORE_LIMIT)
       return { error: `無料版は${FREE_STORE_LIMIT}店舗まで登録できます。Premiumで無制限になります。` };
     if (stores.find(s => s.name === name))
       return { error: 'その店舗名はすでに登録されています' };
@@ -54,7 +77,7 @@ const DB = {
   },
   addRecord(data) {
     const records = this.getRecords();
-    if (records.length >= FREE_RECORD_LIMIT)
+    if (!isPremium() && records.length >= FREE_RECORD_LIMIT)
       return { error: `無料版は${FREE_RECORD_LIMIT}件まで保存できます。Premiumで無制限になります。` };
     const record = { id: uid(), ...data, createdAt: new Date().toISOString() };
     records.push(record);
@@ -139,11 +162,12 @@ function navigateTo(page) {
   document.getElementById('more-menu').classList.add('hidden');
 
   switch (page) {
-    case 'home':     initHome();     break;
-    case 'stores':   initStores();   break;
-    case 'input':    initInput();    break;
-    case 'analysis': initAnalysis(); break;
-    case 'calendar': initCalendar(); break;
+    case 'home':     initHome();      break;
+    case 'stores':   initStores();    break;
+    case 'input':    initInput();     break;
+    case 'analysis': initAnalysis();  break;
+    case 'calendar': initCalendar();  break;
+    case 'premium':  renderPremium(); break;
   }
 
   window.scrollTo(0, 0);
@@ -863,12 +887,64 @@ function loadCalendar() {
 }
 
 // ============================================================
+// Premium ページ
+// ============================================================
+function renderPremium() {
+  const unlocked = isPremium();
+  const el = document.getElementById('premium-content');
+  if (!el) return;
+
+  if (unlocked) {
+    el.innerHTML = `
+      <div class="premium-active-card">
+        <div class="premium-active-icon">✅</div>
+        <div class="premium-active-title">Premium 有効中</div>
+        <p class="premium-active-sub">すべての機能が利用できます。ありがとうございます！</p>
+        <button class="btn btn-outline-sm" onclick="if(confirm('Premiumを解除しますか？')){revokePremium();renderPremium();}">解除する</button>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <a class="btn btn-premium-pay" href="https://buy.stripe.com/4gMbIU6zr3b2bfufyK7ss02" target="_blank" rel="noopener">
+      💳 月額 ¥700 で Premium にアップグレード
+    </a>
+    <p class="premium-pay-note">決済完了後、自動でアプリに戻り解除されます</p>
+    <div class="premium-code-section">
+      <p class="premium-code-label">コードをお持ちの方</p>
+      <div class="premium-code-row">
+        <input id="premium-code-input" type="text" placeholder="コードを入力" autocomplete="off">
+        <button class="btn btn-gold-sm" onclick="doUnlock()">適用</button>
+      </div>
+    </div>`;
+}
+
+function doUnlock() {
+  const code = document.getElementById('premium-code-input')?.value || '';
+  if (tryUnlock(code)) {
+    showToast('🎉 Premiumが有効になりました！');
+    renderPremium();
+  } else {
+    showToast('コードが正しくありません', 'error');
+  }
+}
+
+// ============================================================
 // アプリ初期化
 // ============================================================
 function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
       .catch(e => console.log('SW:', e));
+  }
+
+  // Stripe 決済後のリダイレクト: ?unlock=HDRPREMIUM2026
+  const unlockParam = new URLSearchParams(location.search).get('unlock');
+  if (unlockParam) {
+    if (tryUnlock(unlockParam)) {
+      showToast('🎉 Premiumが有効になりました！');
+    }
+    history.replaceState({}, '', location.pathname);
   }
 
   document.getElementById('form-date').addEventListener('change', updateWeekday);

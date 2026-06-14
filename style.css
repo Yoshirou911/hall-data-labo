@@ -802,6 +802,86 @@ textarea { resize: vertical; min-height: 58px; }
 .plan-features li.ok { color: var(--text); }
 .plan-features li.ng { color: var(--text3); text-decoration: line-through; }
 
+/* ===== Premium 購入UI ===== */
+#premium-content { margin-top: 20px; }
+
+.btn-premium-pay {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  color: #000;
+  font-size: 16px;
+  font-weight: 800;
+  text-align: center;
+  border-radius: var(--r);
+  text-decoration: none;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 16px rgba(212,160,23,0.3);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.btn-premium-pay:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.premium-pay-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text3);
+  margin: 8px 0 20px;
+}
+
+.premium-code-section {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.premium-code-label {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.premium-code-row {
+  display: flex;
+  gap: 8px;
+}
+.premium-code-row input {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.premium-code-row input:focus { border-color: var(--gold); }
+.btn-gold-sm {
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.premium-active-card {
+  text-align: center;
+  padding: 28px 0;
+}
+.premium-active-icon { font-size: 48px; margin-bottom: 8px; }
+.premium-active-title { font-size: 20px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+.premium-active-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+.btn-outline-sm {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text3);
+  font-size: 12px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
 /* ===== 注意事項 ===== */
 .notice-card {
   background: var(--card);

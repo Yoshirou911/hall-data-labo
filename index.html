@@ -241,7 +241,6 @@
         <div class="premium-badge">PREMIUM</div>
         <h2>より深い分析を</h2>
         <p class="premium-price">月額 <span>¥700</span></p>
-        <p class="premium-sub">（準備中）</p>
       </div>
       <div class="plan-comparison">
         <div class="plan-card free-plan">
@@ -251,10 +250,9 @@
             <li class="ok">✓ データ保存 100件まで</li>
             <li class="ok">✓ 基本分析</li>
             <li class="ok">✓ カレンダー表示</li>
-            <li class="ng">✗ 詳細分析</li>
-            <li class="ng">✗ 複数店舗比較</li>
-            <li class="ng">✗ CSV保存/読み込み</li>
-            <li class="ng">✗ 広告非表示</li>
+            <li class="ng">✗ 店舗登録 無制限</li>
+            <li class="ng">✗ データ保存 無制限</li>
+            <li class="ng">✗ CSV書き出し</li>
           </ul>
         </div>
         <div class="plan-card premium-plan">
@@ -267,12 +265,12 @@
             <li class="ok">✓ カレンダー表示</li>
             <li class="ok">✓ 詳細分析</li>
             <li class="ok">✓ 複数店舗比較</li>
-            <li class="ok">✓ CSV保存/読み込み</li>
-            <li class="ok">✓ 広告非表示</li>
+            <li class="ok">✓ CSV書き出し</li>
           </ul>
-          <button class="btn btn-premium" disabled>準備中</button>
         </div>
       </div>
+      <!-- JS で動的に描画 -->
+      <div id="premium-content"></div>
     </div>
   </section>
 
