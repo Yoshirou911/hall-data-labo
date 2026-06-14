@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <meta name="description" content="パチンコ・スロット店舗の過去データ傾向分析ツール">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="ホール研究所">
+  <title>ホールデータ研究所 AI</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1 class="app-title">ホールデータ研究所 <span class="ai-badge">AI</span></h1>
+</header>
+
+<main class="app-main">
+
+  <!-- ホーム -->
+  <section id="page-home" class="page active">
+    <div class="page-content">
+      <div class="home-hero">
+        <h2>過去データで傾向を読む</h2>
+        <p class="hero-sub">入力データをAIが分析。店舗・曜日・機種の傾向を可視化します</p>
+      </div>
+      <div class="disclaimer-banner">
+        ⚠️ 過去データの傾向分析です。勝利・利益を保証するものではありません
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">登録店舗</div>
+          <div class="stat-value" id="home-store-count">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">データ件数</div>
+          <div class="stat-value" id="home-record-count">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">機種数</div>
+          <div class="stat-value" id="home-machine-count">0</div>
+        </div>
+      </div>
+      <div class="section-title">注目店舗</div>
+      <div id="home-top-stores"></div>
+      <div class="quick-actions">
+        <button class="btn btn-primary" onclick="navigateTo('input')">＋ データ入力</button>
+        <button class="btn btn-secondary" onclick="navigateTo('analysis')">分析を見る</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 店舗一覧 -->
+  <section id="page-stores" class="page">
+    <div class="page-content">
+      <div class="page-header">
+        <h2>店舗一覧</h2>
+        <button class="btn btn-sm btn-primary" onclick="showAddStoreModal()">＋ 追加</button>
+      </div>
+      <div class="free-limit-notice" id="store-limit-notice">無料版：0 / 3 店舗</div>
+      <div id="stores-list"></div>
+      <div class="empty-state hidden" id="stores-empty">
+        <div class="empty-icon">🏪</div>
+        <p>店舗が登録されていません</p>
+        <button class="btn btn-primary" onclick="showAddStoreModal()">最初の店舗を追加</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- データ入力 -->
+  <section id="page-input" class="page">
+    <div class="page-content">
+      <div class="page-header">
+        <h2>データ入力</h2>
+        <button class="btn btn-sm btn-ghost" onclick="showCsvModal()">CSV</button>
+      </div>
+      <form id="data-form" class="input-form" onsubmit="handleDataSubmit(event)">
+        <div class="form-group">
+          <label>店舗 *</label>
+          <select id="form-store" required>
+            <option value="">選択してください</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>日付 *</label>
+            <input type="date" id="form-date" required>
+          </div>
+          <div class="form-group">
+            <label>曜日</label>
+            <input type="text" id="form-weekday" readonly class="readonly-field">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>機種名 *</label>
+          <input type="text" id="form-machine" required placeholder="例：アイムジャグラー" list="machine-suggestions">
+          <datalist id="machine-suggestions"></datalist>
+        </div>
+        <div class="form-group">
+          <label>種別 *</label>
+          <div class="radio-group">
+            <label class="radio-label"><input type="radio" name="machine-type" value="slot" checked> スロット</label>
+            <label class="radio-label"><input type="radio" name="machine-type" value="pachinko"> パチンコ</label>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>台数</label>
+            <input type="number" id="form-count" placeholder="50" min="1">
+          </div>
+          <div class="form-group">
+            <label>勝率（%）</label>
+            <input type="number" id="form-winrate" placeholder="45" min="0" max="100" step="0.1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>総差枚/差玉</label>
+            <input type="number" id="form-total-diff" placeholder="5000">
+          </div>
+          <div class="form-group">
+            <label>平均差枚/差玉</label>
+            <input type="number" id="form-avg-diff" placeholder="100">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>稼働メモ</label>
+          <input type="text" id="form-operation-memo" placeholder="例：夕方から稼働率上昇">
+        </div>
+        <div class="form-group">
+          <label>イベント/旧イベメモ</label>
+          <input type="text" id="form-event-memo" placeholder="例：月末、毎月7日">
+        </div>
+        <div class="form-group">
+          <label>自由メモ</label>
+          <textarea id="form-free-memo" rows="2" placeholder="気づいたことなど"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">保存する</button>
+      </form>
+      <div class="recent-section">
+        <div class="section-title">最近の入力</div>
+        <div id="recent-records"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 分析 -->
+  <section id="page-analysis" class="page">
+    <div class="page-content">
+      <div class="page-header"><h2>分析</h2></div>
+      <div class="store-selector">
+        <select id="analysis-store-select" onchange="loadAnalysis()">
+          <option value="">店舗を選択してください</option>
+        </select>
+      </div>
+      <div id="analysis-content" class="hidden">
+        <div class="analysis-card attention-card">
+          <div class="analysis-card-header">総合注目度</div>
+          <div class="attention-level" id="analysis-attention-level">-</div>
+          <div class="attention-label" id="analysis-attention-label"></div>
+          <div class="confidence-badge" id="analysis-confidence"></div>
+        </div>
+        <div class="analysis-grid">
+          <div class="analysis-mini-card">
+            <div class="mini-label">直近7日平均</div>
+            <div class="mini-value" id="analysis-avg7">-</div>
+          </div>
+          <div class="analysis-mini-card">
+            <div class="mini-label">直近30日平均</div>
+            <div class="mini-value" id="analysis-avg30">-</div>
+          </div>
+          <div class="analysis-mini-card">
+            <div class="mini-label">データ件数</div>
+            <div class="mini-value" id="analysis-record-count">-</div>
+          </div>
+          <div class="analysis-mini-card">
+            <div class="mini-label">直近傾向</div>
+            <div class="mini-value" id="analysis-trend">-</div>
+          </div>
+        </div>
+        <div class="analysis-card comment-card">
+          <div class="analysis-card-header">AI分析コメント</div>
+          <div id="analysis-comment" class="ai-comment"></div>
+          <div class="analysis-disclaimer">
+            ※この分析は過去データに基づく傾向であり、今後の結果を保証するものではありません。遊技は予算を決めて自己責任で行ってください。
+          </div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-card-header">曜日別平均差枚/差玉</div>
+          <div id="analysis-weekday" class="weekday-chart"></div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-card-header">日付末尾別傾向</div>
+          <div id="analysis-date-suffix" class="suffix-chart"></div>
+        </div>
+        <div class="analysis-card">
+          <div class="analysis-card-header">機種別ランキング（平均差枚/差玉）</div>
+          <div id="analysis-machine-ranking" class="machine-list"></div>
+        </div>
+      </div>
+      <div id="analysis-empty" class="empty-state">
+        <div class="empty-icon">📊</div>
+        <p>店舗を選択してください</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- カレンダー -->
+  <section id="page-calendar" class="page">
+    <div class="page-content">
+      <div class="page-header"><h2>カレンダー</h2></div>
+      <div class="store-selector">
+        <select id="calendar-store-select" onchange="loadCalendar()">
+          <option value="">店舗を選択してください</option>
+        </select>
+      </div>
+      <div class="calendar-nav">
+        <button class="btn btn-ghost" onclick="changeMonth(-1)">◀</button>
+        <span id="calendar-month-label"></span>
+        <button class="btn btn-ghost" onclick="changeMonth(1)">▶</button>
+      </div>
+      <div class="calendar-legend">
+        <span class="leg-s">S</span>
+        <span class="leg-a">A</span>
+        <span class="leg-b">B</span>
+        <span class="leg-c">C</span>
+        <span class="leg-d">D</span>
+      </div>
+      <div id="calendar-grid" class="calendar-grid"></div>
+    </div>
+  </section>
+
+  <!-- Premium -->
+  <section id="page-premium" class="page">
+    <div class="page-content">
+      <div class="premium-hero">
+        <div class="premium-badge">PREMIUM</div>
+        <h2>より深い分析を</h2>
+        <p class="premium-price">月額 <span>¥700</span></p>
+        <p class="premium-sub">（準備中）</p>
+      </div>
+      <div class="plan-comparison">
+        <div class="plan-card free-plan">
+          <div class="plan-name">無料版</div>
+          <ul class="plan-features">
+            <li class="ok">✓ 店舗登録 3件まで</li>
+            <li class="ok">✓ データ保存 100件まで</li>
+            <li class="ok">✓ 基本分析</li>
+            <li class="ok">✓ カレンダー表示</li>
+            <li class="ng">✗ 詳細分析</li>
+            <li class="ng">✗ 複数店舗比較</li>
+            <li class="ng">✗ CSV保存/読み込み</li>
+            <li class="ng">✗ 広告非表示</li>
+          </ul>
+        </div>
+        <div class="plan-card premium-plan">
+          <div class="plan-badge-mini">おすすめ</div>
+          <div class="plan-name">Premium</div>
+          <ul class="plan-features">
+            <li class="ok">✓ 店舗登録 無制限</li>
+            <li class="ok">✓ データ保存 無制限</li>
+            <li class="ok">✓ 基本分析</li>
+            <li class="ok">✓ カレンダー表示</li>
+            <li class="ok">✓ 詳細分析</li>
+            <li class="ok">✓ 複数店舗比較</li>
+            <li class="ok">✓ CSV保存/読み込み</li>
+            <li class="ok">✓ 広告非表示</li>
+          </ul>
+          <button class="btn btn-premium" disabled>準備中</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 注意事項 -->
+  <section id="page-notice" class="page">
+    <div class="page-content">
+      <h2 style="padding: 16px 0 12px;">注意事項・免責事項</h2>
+      <div class="notice-card notice-important">
+        <h3>⚠️ 重要なお知らせ</h3>
+        <p>このアプリは<strong>過去データの傾向分析ツール</strong>です。いかなる場合も勝利・利益を保証するものではありません。</p>
+      </div>
+      <div class="notice-card">
+        <h3>依存症について</h3>
+        <p>ギャンブル等依存症は誰にでも起こりうる問題です。以下のサインに気づいたらすぐに専門機関に相談してください。</p>
+        <ul>
+          <li>遊技にかける時間・お金が増えている</li>
+          <li>損を取り返そうと続けてしまう</li>
+          <li>遊技のことが頭から離れない</li>
+          <li>家族や友人に嘘をついている</li>
+        </ul>
+        <div class="helpline">
+          <strong>相談窓口</strong><br>
+          ギャンブル等依存症相談コールセンター<br>
+          📞 0120-004-008（無料）<br>
+          全国どこからでも 24時間 365日
+        </div>
+      </div>
+      <div class="notice-card">
+        <h3>ご利用ルール</h3>
+        <ul>
+          <li>18歳未満の方のご利用はお断りします</li>
+          <li>遊技は法律で定められた範囲内で楽しんでください</li>
+          <li>予算を決めてから遊技してください</li>
+          <li>本アプリのデータはあくまで参考情報です</li>
+        </ul>
+      </div>
+      <div class="notice-card">
+        <h3>免責事項</h3>
+        <p>本アプリは過去の入力データを元に統計的傾向を表示するものであり、将来の出玉・出し方を予測・保証するものではありません。本アプリの情報を元にした遊技による損失について、開発者は一切の責任を負いません。</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ボトムナビゲーション -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="navigateTo('home')" data-page="home">
+    <span class="nav-icon">🏠</span><span class="nav-label">ホーム</span>
+  </button>
+  <button class="nav-btn" onclick="navigateTo('stores')" data-page="stores">
+    <span class="nav-icon">🏪</span><span class="nav-label">店舗</span>
+  </button>
+  <button class="nav-btn" onclick="navigateTo('input')" data-page="input">
+    <span class="nav-icon">✏️</span><span class="nav-label">入力</span>
+  </button>
+  <button class="nav-btn" onclick="navigateTo('analysis')" data-page="analysis">
+    <span class="nav-icon">📊</span><span class="nav-label">分析</span>
+  </button>
+  <button class="nav-btn" onclick="navigateTo('calendar')" data-page="calendar">
+    <span class="nav-icon">📅</span><span class="nav-label">カレンダー</span>
+  </button>
+</nav>
+
+<!-- もっと見るボタン（Premium / 注意事項） -->
+<button class="more-fab" onclick="toggleMoreMenu()">⋯</button>
+<div id="more-menu" class="more-menu hidden">
+  <button onclick="navigateTo('premium'); toggleMoreMenu()">💎 Premium</button>
+  <button onclick="navigateTo('notice'); toggleMoreMenu()">⚠️ 注意事項</button>
+</div>
+
+<!-- モーダル -->
+<div id="modal-overlay" class="modal-overlay hidden" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- トースト通知 -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
